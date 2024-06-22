@@ -24,4 +24,5 @@ conda install pytorch torchvision -c pytorch
 pip install langchain_community
 pip install langchain_chroma
 pip install youtube_transcript_api
+pip install marker_pdf
 ```
