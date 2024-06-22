@@ -163,3 +163,4 @@ cython_debug/
 
 _input/*.*
 _output/*.*
+_markdown/*.*

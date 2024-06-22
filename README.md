@@ -1,6 +1,26 @@
 # Summariser
 
-Various text summarisers based on langchain and Ollama.
+Generic text summariser based on langchain and Ollama. Understands the
+following file formats:
+
+* .txt
+* .csv
+* .pdf
+* .docx
+* .pptx
+* .html
+
+Also understands URLs and Youtube videos.
+
+```sh
+conda activate langchain
+python summarise.py [file|dir|url|youtube ...]
+```
+
+Defaults to summarising recursively all files in "_input" and places summaries
+in "_output" and generated markdown files in "_markdown"
+
+## Other summarisers (deprecated)
 
 * summcsv.py: Summarise a CSV file using Ollama and LangChain.
 * summpdf.py: Summarise a PDF file using Ollama and LangChain.
@@ -10,19 +30,15 @@ Various text summarisers based on langchain and Ollama.
 
 To use:
 
-```sh
-conda activate langchain
-python summxx.py content
-```
-
 ## Creating langchain conda environment
 
 ```sh
-conda create -n langchain langchain langchainhub bs4 lxml transformers ipykernel ipywidgets pytube pypdf tiktoken
-conda activate langchain
+conda create -n summarise langchain bs4 lxml transformers ipykernel ipywidgets pytube pypdf tiktoken pypandoc docx2txt
+conda activate summarise
 conda install pytorch torchvision -c pytorch
 pip install langchain_community
 pip install langchain_chroma
 pip install youtube_transcript_api
 pip install marker_pdf
+pip install pptx2md
 ```
