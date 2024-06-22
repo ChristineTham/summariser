@@ -13,8 +13,8 @@ os.environ["USER_AGENT"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKi
 import argparse
 import re
 import requests
-# import docx2txt
 import pypandoc
+import pymupdf4llm
 from urllib.parse import urlparse, parse_qs
 from bs4 import BeautifulSoup
 from markdownify import markdownify as md
@@ -98,6 +98,14 @@ def process_doc(file):
     
     output_markdown(file.name, markdown)
     
+def process_pdf(file):
+    print("Processing PDF file:", file.name)
+
+    # Convert file to markdown
+    markdown = pymupdf4llm.to_markdown(file.name)
+    
+    output_markdown(file.name, markdown)
+    
 def process_html(file):
     print("Processing HTML file:", file.name)
     
@@ -109,7 +117,7 @@ def process_csv(file):
     loader = CSVLoader(file_path=file.name)
     output_text(file.name, loader.load())
 
-def process_pdf(file):
+def process_pdf2(file):
     print("Processing PDF file:", file.name)
     
     loader = PyPDFLoader(file.name)

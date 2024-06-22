@@ -33,12 +33,12 @@ To use:
 ## Creating langchain conda environment
 
 ```sh
-conda create -n summarise langchain bs4 lxml transformers ipykernel ipywidgets pytube pypdf tiktoken pypandoc docx2txt
+conda create -n summarise langchain bs4 lxml transformers ipykernel ipywidgets pytube pypdf tiktoken pypandoc
 conda activate summarise
 conda install pytorch torchvision -c pytorch
 pip install langchain_community
 pip install langchain_chroma
 pip install youtube_transcript_api
 pip install marker_pdf
-pip install pptx2md
+pip install pymupdf4llm
 ```
