@@ -1,8 +1,24 @@
-from __future__ import unicode_literals
+# yt2md.py
+#
+# Convert a Youtube Video transcript to markdown
+# Usage: python yt2md.py <URL>
+# Example: python yt2md.py https://www.youtube.com/watch?v=dQw4w9WgXcQ
+#
+
 import sys
 from youtube_transcript_api import YouTubeTranscriptApi
 from urllib.parse import urlparse, parse_qs
 import yt_dlp
+
+def generate_slug(input_string):
+    # Convert input string to lowercase and replace spaces with hyphens
+    slug = input_string.lower().replace(" ", "-")
+
+    # Remove any non-alphanumeric characters (except hyphens) using a regular expression
+    import re
+    slug = re.sub(r"[^a-z0-9\-]", "", slug)
+
+    return slug
 
 def get_video_metadata(url):
     ydl_opts = {}
@@ -11,20 +27,6 @@ def get_video_metadata(url):
         info_dict = ydl.extract_info(url, download=False)
         # print(ydl.sanitize_info(info_dict))
         return info_dict
-    
-def extract_youtube_id(url):
-    parsed_url = urlparse(url)
-    video_id = None
-
-    if 'youtu.be' in parsed_url.netloc:
-        video_id = parsed_url.path[1:]
-    elif 'youtube.com' in parsed_url.netloc and 'watch' in parsed_url.path:
-        query_params = parse_qs(parsed_url.query)
-        video_id = query_params['v'][0]
-    else:
-        raise ValueError("Invalid YouTube URL")
-
-    return video_id
 
 def download_transcript(video_url):
     try:
@@ -34,9 +36,13 @@ def download_transcript(video_url):
         # transcripts = YouTubeTranscriptApi.list_transcripts(video_id)
         # print(transcripts)
         transcript = YouTubeTranscriptApi.get_transcript(video_id, preserve_formatting=True)
-
-        with open(f"{video_id}.md", "w") as f:
+        
+        filename = generate_slug(video["title"])
+        print(f"Saving {filename}.md")
+        
+        with open(f"{filename}.md", "w") as f:
             f.write(f"# {video["title"]}\n\n")
+            f.write(f"ID: {video_id}  \n")
             f.write(f"[Original]({video_url})\n\n")
             f.write(f"## Description\n\n```text\n{video["description"]}\n```\n\n")
             f.write("## Transcript\n\n")
