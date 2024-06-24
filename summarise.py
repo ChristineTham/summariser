@@ -27,6 +27,22 @@ from langchain_core.prompts import PromptTemplate
 # Customise to model and parameters of your choice
 llm = Ollama(model="llama3:8b-instruct-fp16", temperature=0.3, num_ctx=8192)
 
+def youtube_id(url):
+    parsed_url = urlparse(url)
+    video_id = None
+
+    if 'youtu.be' in parsed_url.netloc:
+        # The ID is the last part of the path
+        video_id = parsed_url.path[1:]
+    elif 'youtube.com' in parsed_url.netloc and 'watch' in parsed_url.path:
+        # The ID is after 'v=' in the query string
+        query_params = parse_qs(parsed_url.query)
+        video_id = query_params['v'][0]
+    else:
+        raise ValueError("Invalid YouTube URL")
+
+    return video_id
+
 def output_file(s, prefix):
     input_prefix = "_input/"
 
@@ -43,6 +59,7 @@ def output_summary(filename: str, summary: str):
     base = os.path.splitext(filename)[0]
     
     summary_file = output_file(f"{base}.md", "_output/")
+    os.makedirs(os.path.dirname(summary_file), exist_ok=True)
     with open(summary_file, 'w') as file:
         file.write(summary)
     print(f'Converted to Markdown summary {summary_file}')
@@ -64,21 +81,32 @@ def output_md(filename, markdown):
     
     output_summary(filename, chain.invoke({"context": markdown}))
     
-def output_markdown(filename, markdown):
+def save_markdown(filename, markdown):
     base = os.path.splitext(filename)[0]
-    markdown_file = output_file(f"{base}.md", "_markdown/")
+    markdown_file = output_file(f"{base}.md", "_processed/")
+    os.makedirs(os.path.dirname(markdown_file), exist_ok=True)
     with open(markdown_file, 'w') as ofile:
         ofile.write(markdown)
     print(f'Converted to Markdown {markdown_file}')
     
     output_md(filename, markdown)
+    
+def save_text(filename, text):
+    base = os.path.splitext(filename)[0]
+    text_file = output_file(f"{base}.txt", "_processed/")
+    os.makedirs(os.path.dirname(text_file), exist_ok=True)
+    with open(text_file, 'w') as ofile:
+        ofile.write(text)
+    print(f'Converted to TXT {text_file}')
+    
+    output_text(filename, text)
 
 def html2md(filename, html):
     html_nostyle = re.sub(r'<style.*?>.*?</style>', '', html, flags=re.DOTALL)
     html_noscript = re.sub(r'<script.*?>.*?</script>', '', html_nostyle, flags=re.DOTALL)
     soup = BeautifulSoup(html_noscript, "html.parser")
     markdown = md(str(soup), default_title=True, heading_style="ATX")
-    output_markdown(filename, markdown)
+    save_markdown(filename, markdown)
 
 def process_txt(file):
     print("Processing Text file:", file.name)
@@ -96,7 +124,7 @@ def process_doc(file):
     # Convert file to markdown
     markdown = pypandoc.convert_file(file.name, 'md')
     
-    output_markdown(file.name, markdown)
+    save_markdown(file.name, markdown)
     
 def process_pdf(file):
     print("Processing PDF file:", file.name)
@@ -104,7 +132,7 @@ def process_pdf(file):
     # Convert file to markdown
     markdown = pymupdf4llm.to_markdown(file.name)
     
-    output_markdown(file.name, markdown)
+    save_markdown(file.name, markdown)
     
 def process_html(file):
     print("Processing HTML file:", file.name)
@@ -148,9 +176,7 @@ def process_url(url):
 def process_video(url):
     print("Processing Youtube video:", url)
     video = YoutubeLoader.from_youtube_url(url, add_video_info=True).load()
-    parsed = urlparse(url)
-    filename = parse_qs(parsed.query)['v'][0]
-    output_text(filename, video[0].page_content)
+    save_text(youtube_id(url), video[0].page_content)
     
 def process_path(path):
     extension_map = {
