@@ -25,24 +25,16 @@ def main():
     # print("Filename: ", filename)
     # print("#pages: ", len(docs))
     
-    llm = Ollama(model="llama3:70b", temperature=0.3, num_ctx=8192)
+    llm = Ollama(model="llama3:8b-instruct-fp16", temperature=0.3, num_ctx=8192)
     
     prompt = PromptTemplate.from_template(
-        "You are an efficient text heading extractor. Your task is to extract headings from the following text, delimited by <document> and </document>. Each heading should be delimited by <heading> and </heading>. Do not provide explanations or preamble. Text: <document>{context}</document>"
+        "You are an efficient text summarizer. Summarize the following page from a longer document, delimited by <page> and </page>, in bullet points, without any preamble, in markdown format. Ignore any page header or footer. Group the bullet points underneath any headings you encounter. Do not add any material not in the document. If there is nothing to summarize, do not add any bullet points. Page: <page>{context}</page>. Summary:"
     )
-    chain = create_stuff_documents_chain(llm, prompt)
+    chain = prompt | llm
 
-    headings = chain.invoke({"context": docs})
-    # print(headings)
-    
-    prompt = PromptTemplate.from_template(
-        "You are an efficient text summarizer. For each heading delimited by <heading> and </heading>, provide a summary in bullet points on the document, delimited by <document> and </document>. Do not provide a preamble. Headings: {headings}. Document: <document>{context}</document>. Summary:"
-    )
-    chain = create_stuff_documents_chain(llm, prompt)
-
-    summary = chain.invoke({"context": docs, "headings": headings})
-
-    print(summary)
+    for i, doc in enumerate(docs):
+        print(chain.invoke({"context": doc.page_content}))
+        # print("Page ", i, ": ", doc.page_content)
 
 if __name__ == "__main__":
     main()

@@ -20,13 +20,25 @@ python summarise.py [file|dir|url|youtube ...]
 Defaults to summarising recursively all files in "_input" and places summaries
 in "_output" and generated markdown files in "_markdown"
 
+## Converb web pages and Youtube videos to Markdown
+
+```sh
+python news2md.py url # convert URL to markdown using newspaper3k
+python webd2md.py url # convert URL to markdown using readability-lxml
+python yt2md.py url   # convert YouTube video captions to markdown
+```
+
+## Convert PDF to Markdown using Marker PDF
+
+```sh
+marker_single input.pdf outdir_dir --batch_multiplier 20
+```
+
 ## Other summarisers (deprecated)
 
 * summcsv.py: Summarise a CSV file using Ollama and LangChain.
 * summpdf.py: Summarise a PDF file using Ollama and LangChain.
-* summyt.py: Summarise a YouTube video transcript using Ollama and LangChain.
 * summweb.py: Summarise a web page using Ollama and LangChain.
-* summhtml.py: Summarise a HTML file using Ollama and LangChain.
 
 To use:
 
