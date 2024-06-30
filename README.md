@@ -55,4 +55,5 @@ pip install marker_pdf
 pip install pymupdf4llm
 pip install yt_dlp
 pip install newspaper3k
+pip install ollama
 ```
