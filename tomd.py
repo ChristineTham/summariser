@@ -62,6 +62,8 @@ def process_ppt(file):
     print("Processing Powerpoint file:", file.name)
     base = os.path.splitext(file.name)[0]
     markdown_dir = output_file(base, "_markdown/")
+    if os.path.exists(markdown_dir):
+        shutil.rmtree(markdown_dir)
     os.makedirs(markdown_dir, exist_ok=True)
     result = subprocess.run(['pptx2md', file.name], stdout=subprocess.PIPE)
     shutil.move("out.md", markdown_dir)
