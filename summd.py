@@ -1,10 +1,11 @@
 # summd.py
 #
-# Generic summariser for text files
+# Generic summariser for text/markdown files
 # Takes filenames or directories as command line arguments
 # (by default all files in "_markdown" directory)
 # Then summarise each file into "_output/file-summ.md"
 # as Markdown with headings retained where appropriate and bullet points in content.
+# Accepted file extensions: .md, .txt
 
 import sys
 import os
@@ -16,7 +17,8 @@ from langchain_community.llms import Ollama
 from langchain_core.prompts import PromptTemplate
 
 # Customise to model and parameters of your choice
-llm = Ollama(model="llama3:8b-instruct-fp16", temperature=0.3, num_ctx=8192)
+llm = Ollama(model="gemma2:9b-instruct-fp16", temperature=0.3, num_ctx=8192)
+# llm = Ollama(model="llama3:8b-instruct-fp16", temperature=0.3, num_ctx=8192)
 # llm = Ollama(model="command-r-plus:latest", temperature=0.3, num_ctx=131072)
 # llm = Ollama(model="mixtral:8x22b", temperature=0.3, num_ctx=65536)
 

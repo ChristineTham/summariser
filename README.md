@@ -45,7 +45,7 @@ To use:
 ## Creating langchain conda environment
 
 ```sh
-conda create -n summarise langchain bs4 lxml transformers ipykernel ipywidgets pytube pypdf tiktoken pypandoc markdownify readability-lxml matplotlib
+conda create -n summarise langchain bs4 lxml transformers ipykernel ipywidgets pytube pypdf tiktoken pypandoc markdownify readability-lxml matplotlib sumy
 conda activate summarise
 conda install pytorch torchvision -c pytorch
 pip install langchain_community
