@@ -34,6 +34,7 @@ def save_markdown(filename, markdown):
     markdown_file = output_file(f"{base}.md", "_markdown/")
     os.makedirs(os.path.dirname(markdown_file), exist_ok=True)
     with open(markdown_file, 'w') as ofile:
+        ofile.write(f"[Original]({filename})\n\n")
         ofile.write(markdown)
     print(f'Converted to Markdown {markdown_file}')
     
