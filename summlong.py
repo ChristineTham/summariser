@@ -4,7 +4,7 @@ from typing import List, Tuple, Optional
 from tqdm import tqdm
 import ollama
 
-model="gemma2:9b-instruct-fp16"
+model="gemma2:27b-instruct-fp16"
 num_ctx=8192
 temperature=0.3
 chunk_delimiter="\n#"
