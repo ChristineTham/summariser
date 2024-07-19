@@ -7,7 +7,6 @@ import ollama
 model="gemma2:9b-instruct-fp16"
 num_ctx=8192
 temperature=0.3
-streaming=True
 chunk_delimiter="\n#"
 detail=0.5
 
@@ -161,6 +160,27 @@ Step 4. Don't include preambles, postambles or explanations.
 
     return final_summary
 
+def output_file(s, prefix):
+    input_prefix = "_markdown/"
+
+    # Strip _input/ prefix if it exists
+    if s.startswith(input_prefix):
+        s = s[len(input_prefix):]
+
+    # Add _output/ prefix
+    s = prefix + s
+
+    return s
+
+def output_summary(filename: str, summary: str):
+    base = os.path.splitext(filename)[0]
+    
+    summary_file = output_file(f"{base}.md", "_output/")
+    os.makedirs(os.path.dirname(summary_file), exist_ok=True)
+    with open(summary_file, 'w') as file:
+        file.write(summary)
+    print(f'Converted to Markdown summary {summary_file}')
+
 def main():
     # Check if the user provided a file name as an argument
     if len(sys.argv) < 2:
@@ -180,7 +200,7 @@ def main():
     print("Length: ", len(markdown))
 
     summary = summarize(markdown, detail=detail, verbose=True)
-    print(summary)
+    output_summary(filename, summary)
 
 if __name__ == "__main__":
     main()

@@ -10,17 +10,12 @@
 import sys
 import os
 import argparse
-import re
-import pymupdf4llm
 
-from langchain_community.llms import Ollama
-from langchain_core.prompts import PromptTemplate
+import ollama
 
-# Customise to model and parameters of your choice
-llm = Ollama(model="gemma2:9b-instruct-fp16", temperature=0.3, num_ctx=8192)
-# llm = Ollama(model="llama3:8b-instruct-fp16", temperature=0.3, num_ctx=8192)
-# llm = Ollama(model="command-r-plus:latest", temperature=0.3, num_ctx=131072)
-# llm = Ollama(model="mixtral:8x22b", temperature=0.3, num_ctx=65536)
+model="gemma2:9b-instruct-fp16"
+num_ctx=8192
+temperature=0.3
 
 def output_file(s, prefix):
     input_prefix = "_markdown/"
@@ -44,13 +39,29 @@ def output_summary(filename: str, summary: str):
     print(f'Converted to Markdown summary {summary_file}')
     
 def output_md(filename, markdown):
-    prompt = PromptTemplate.from_template(
-        "You are an efficient text summarizer. Do not add preamble or explanations in your output. Summarize the following document into Markdown format. The document is delimited by <document> and </document>. Retain Markdown headings, and summarize content underneath each heading into bullet points without preamble. Do not add any material not in the document. Document: <document>{context}</document>. Summary:"
-    )
+    system_prompt = """
+You are an efficient text summarizer.
 
-    chain = prompt | llm
+## instructions
+Step 1. Read the entire text.
+Step 2. Extract headings which begin with #.
+Step 3. For each heading, create a summary in bullet points.
+Step 4. Don't include preambles, postambles or explanations.
+"""
+
+    response = ollama.chat(
+        model=model,
+        messages=[
+            {'role': 'system', 'content': system_prompt},
+            {'role': 'user', 'content': "## text\n" + markdown}
+        ],
+        options={
+            "temperature": temperature,
+            "num_ctx": num_ctx
+        }
+    )
     
-    output_summary(filename, chain.invoke({"context": markdown}))
+    output_summary(filename, response['message']['content'])
     
 def process_path(path):
     _, file_extension = os.path.splitext(path)
@@ -71,7 +82,7 @@ def process_dir(folder):
             
 def main():
     if len(sys.argv) < 2:
-        print("Processing _input directory by default")
+        print("Processing _markdown directory by default")
         path = "_markdown"
         process_dir(path)
     else:
