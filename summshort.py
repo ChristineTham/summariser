@@ -25,26 +25,22 @@ def main():
 
     print("Length: ", len(markdown))
     
-    prompt_template = """
-## text
-<markdown>
-{context}
-</markdown>
+    system_prompt = """
+You are an efficient text summarizer.
 
 ## instructions
-Step 1. Read the entire text from <markdown> to </markdown>.
+Step 1. Read the entire text.
 Step 2. Extract headings which begin with #.
 Step 3. For each heading, create a summary in bullet points.
 Step 4. Don't include preambles, postambles or explanations.
-
-## summary
 """
-
-    prompt = prompt_template.format(context=markdown)
 
     stream = ollama.chat(
         model=model,
-        messages=[{'role': 'user', 'content': prompt}],
+        messages=[
+            {'role': 'system', 'content': system_prompt},
+            {'role': 'user', 'content': "## text\n" + markdown}
+        ],
         options={
             "temperature": temperature,
             "num_ctx": num_ctx

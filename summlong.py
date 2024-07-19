@@ -72,7 +72,7 @@ def summarize(text: str,
               detail: float = 0,
               model: str = model,
               additional_instructions: Optional[str] = None,
-              minimum_chunk_size: Optional[int] = 2000,
+              minimum_chunk_size: Optional[int] = num_ctx / 2,
               chunk_delimiter: str = ".",
               summarize_recursively=False,
               verbose=False):
@@ -117,6 +117,9 @@ def summarize(text: str,
 
     # set system message
     system_message_content = """
+You are an efficient text summarizer.
+
+## instructions
 Step 1. Read the entire text.
 Step 2. Extract headings which begin with #.
 Step 3. For each heading, create a summary in bullet points.
@@ -133,7 +136,7 @@ Step 4. Don't include preambles, postambles or explanations.
             user_message_content = f"Previous summaries:\n\n{accumulated_summaries_string}\n\nText to summarize next:\n\n{chunk}"
         else:
             # Directly passing the chunk for summarization without recursive context
-            user_message_content = chunk
+            user_message_content = "## text\n" + chunk
 
         # Constructing messages based on whether recursive summarization is applied
         messages = [
