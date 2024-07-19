@@ -1,7 +1,6 @@
 import sys
 import os
 import ollama
-import pymupdf4llm
 
 model="gemma2:9b-instruct-fp16"
 num_ctx=8192
@@ -11,7 +10,7 @@ streaming=True
 def main():
     # Check if the user provided a file name as an argument
     if len(sys.argv) < 2:
-        print("Please provide a filename of a PDF document.")
+        print("Please provide a filename containing text or Markdown.")
         return
 
     filename = sys.argv[1]
@@ -21,8 +20,9 @@ def main():
         print("The file does not exist.")
         return
 
-    # Convert file to markdown
-    markdown = pymupdf4llm.to_markdown(filename)
+    with open(filename, 'r') as file:
+        markdown = file.read()
+
     print("Length: ", len(markdown))
     
     prompt_template = """
@@ -33,8 +33,8 @@ def main():
 
 ## instructions
 Step 1. Read the entire text from <markdown> to </markdown>.
-Step 2. Extract markdown headings which begin with #.
-Step 3. For each markdown heading, create a summary in bullet points.
+Step 2. Extract headings which begin with #.
+Step 3. For each heading, create a summary in bullet points.
 Step 4. Don't include preambles, postambles or explanations.
 
 ## summary
