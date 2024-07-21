@@ -13,12 +13,32 @@ import argparse
 from typing import List, Tuple, Optional
 from tqdm import tqdm
 import ollama
+from sumy.nlp.tokenizers import Tokenizer
+from sumy.nlp.stemmers import Stemmer
+from sumy.parsers.plaintext import PlaintextParser
+from sumy.summarizers.lsa import LsaSummarizer     
+from sumy.utils import get_stop_words
+import yake
 
 model="gemma2:27b-instruct-fp16"
 num_ctx=8192
 temperature=0.3
 chunk_delimiter="\n#"
 detail=0.5
+LANGUAGE = "english"
+SENTENCES_COUNT = 10
+
+system_prompt = """
+You are an efficient text summarizer.
+
+## Instructions
+
+Step 1. Read the entire text.
+Step 2. Extract headings which begin with #.
+Step 3. Include each heading in the output.
+Step 4. For each heading, create a summary in bullet points.
+Step 5. Don't include preambles, postambles or explanations.
+"""
 
 # This function chunks a text into smaller pieces based on a maximum token count and a delimiter.
 def chunk_on_delimiter(input_string: str,
@@ -125,15 +145,8 @@ def summarize(text: str,
         print(f"Chunk lengths are {[len(x) for x in text_chunks]}")
 
     # set system message
-    system_message_content = """
-You are an efficient text summarizer.
+    system_message_content = system_prompt
 
-## instructions
-Step 1. Read the entire text.
-Step 2. Extract headings which begin with #.
-Step 3. For each heading, create a summary in bullet points.
-Step 4. Don't include preambles, postambles or explanations.
-"""
     if additional_instructions is not None:
         system_message_content += f"\n\n{additional_instructions}"
 
@@ -142,10 +155,10 @@ Step 4. Don't include preambles, postambles or explanations.
         if summarize_recursively and accumulated_summaries:
             # Creating a structured prompt for recursive summarization
             accumulated_summaries_string = '\n\n'.join(accumulated_summaries)
-            user_message_content = f"Previous summaries:\n\n{accumulated_summaries_string}\n\nText to summarize next:\n\n{chunk}"
+            user_message_content = f"## Previous summaries:\n\n{accumulated_summaries_string}\n\n## Text to summarize next:\n\n{chunk}"
         else:
             # Directly passing the chunk for summarization without recursive context
-            user_message_content = "## text\n" + chunk
+            user_message_content = "## Text to summarize\n" + chunk
 
         # Constructing messages based on whether recursive summarization is applied
         messages = [
@@ -186,25 +199,17 @@ def output_summary(filename: str, summary: str):
     base = os.path.splitext(filename)[0]
     
     summary_file = output_file(f"{base}.md", "_output/")
+    original = output_file(filename, "")
     os.makedirs(os.path.dirname(summary_file), exist_ok=True)
     with open(summary_file, 'w') as file:
+        file.write(f"[Original]({original})\n")
         file.write(summary)
-    print(f'Converted to Markdown summary {summary_file}')
+    print(f'Converted to Markdown summary [{summary_file}]\n')
     
 def output_md(filename, markdown):
     if (len(markdown) > num_ctx):
         summary = summarize(markdown, detail=detail, verbose=True)
     else:
-        system_prompt = """
-You are an efficient text summarizer.
-
-## instructions
-Step 1. Read the entire text.
-Step 2. Extract headings which begin with #.
-Step 3. For each heading, create a summary in bullet points.
-Step 4. Don't include preambles, postambles or explanations.
-"""
-
         response = ollama.chat(
             model=model,
             messages=[
@@ -217,15 +222,33 @@ Step 4. Don't include preambles, postambles or explanations.
             }
         )
         summary = response['message']['content']
+        print(f"Total {(response["total_duration"]/1e9):.1f}s Load {(response["load_duration"]/1e9):.1f}s Prompt {(response["prompt_eval_duration"]/1e9):.1f}s Eval {(response["eval_duration"]/1e9):.1f}s", file=sys.stderr)
+
+    # Extract keywords using YAKE
+    summary += "\n## Keywords\n\n"
+    kw_extractor = yake.KeywordExtractor()
+    keywords = kw_extractor.extract_keywords(markdown)
+
+    for kw in keywords:
+        summary += f"* [[{kw[0]}]]\n" 
     
+    # Summarize using sumy LSA       
+    summary += "\n## Abstract\n\n"  
+    parser = PlaintextParser.from_string(markdown, Tokenizer(LANGUAGE))
+    stemmer = Stemmer(LANGUAGE)
+    summarizer = LsaSummarizer(stemmer)     
+    summarizer.stop_words = get_stop_words(LANGUAGE)                  
+    for sentence in summarizer(parser.document, SENTENCES_COUNT):
+        summary += f"* {sentence}\n"
+
     output_summary(filename, summary)
     
 def process_path(path):
     _, file_extension = os.path.splitext(path)
     if (file_extension == ".md" or file_extension == ".txt"):
-        print("Processing file:", path)
+        print(f"Processing file: [{path}]")
     else:
-        print("Skipping unknown file ", path)
+        print(f"Skipping unknown file [{path}]")
         return
 
     with open(path, 'r') as file:
