@@ -27,8 +27,8 @@ NUM_CTX=8192
 TEMPERATURE=0.3
 LANGUAGE = "english"
 SENTENCES_COUNT = 10
-BLOCKSIZE=NUM_CTX * 1.5
-MIN_BLOCKSIZE=NUM_CTX / 2
+BLOCKSIZE=int(NUM_CTX * 1.5)
+MIN_BLOCKSIZE=int(NUM_CTX / 2)
 FENCES = ["```", "~~~"]
 MAX_HEADING_LEVEL = 6
 
@@ -92,7 +92,10 @@ def group_sections(sections, blocksize=BLOCKSIZE):
         # the remaining part of the current string.
         if len(curr_group) + len(s) > blocksize:
             if len(curr_group) > 0:
-                groups.append(curr_group)
+                if len(s) < MIN_BLOCKSIZE:
+                    groups.append(curr_group + s)
+                else:
+                    groups.append(curr_group)
             curr_group = ""
             if (len(s) > blocksize):
                 groups.extend(split_block(s))
