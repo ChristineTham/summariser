@@ -5,7 +5,7 @@ This repository contains a collection of tools designed to help you summarize va
 Finally a "summd.py" convert Markdown to summarised versions placed in the "_output" folder. The summaries are created using 3 summarisation methods:
 
 * keyword extraction using YAKE
-* Up to 10 bullet points (configurable) for abstract generated using LSA (Latent Semantic Analysis) via [sumy](https://github.com/miso-belica/sumy)
+* [temporarily disabled] Up to 10 bullet points (configurable) for abstract generated using LSA (Latent Semantic Analysis) via [sumy](https://github.com/miso-belica/sumy)
 * full summary by headings using the LLM of your choice using Ollama.
 
 Various formats are supported by "tomd.py", including:
@@ -43,6 +43,12 @@ python yt2md.py url   # convert YouTube video captions to markdown
 marker_single --batch_multiplier 20 input.pdf outdir_dir
 ```
 
+## Convert Powerpoint to Markdown using pptx2md
+
+```sh
+pptx2md input.pptx # generates out.md and img/
+```
+
 ## Experiments
 
 The "experiments" folder contains various experiments used to build these tools. These experiments may no longer work as they are no longer maintained.
@@ -65,4 +71,5 @@ pip install yt_dlp
 pip install newspaper3k
 pip install ollama
 pip install pptx2md
+pip install lxml_html_clean
 ```

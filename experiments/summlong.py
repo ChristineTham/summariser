@@ -1,25 +1,174 @@
 import sys
 import os
+import re
 from typing import List, Tuple, Optional
+from collections import namedtuple
 from tqdm import tqdm
 import ollama
 
-model="gemma2:27b-instruct-fp16"
-num_ctx=8192
-temperature=0.3
+FENCES = ["```", "~~~"]
+MAX_HEADING_LEVEL = 6
+
+Chapter = namedtuple("Chapter", "parent_headings, heading, text")
+
+MODEL="gemma2:27b-instruct-fp16"
+NUM_CTX=8192
+TEMPERATURE=0.3
 chunk_delimiter="\n#"
 detail=0.5
+BLOCKSIZE=NUM_CTX
+
+def split_block(block, blocksize=BLOCKSIZE):
+    groups = []
+    rem_block = block
+    while len(rem_block) > 0:
+        split_index = rem_block.rfind("\n", 0, blocksize)
+        if split_index != -1:
+            groups.append(rem_block[:split_index])
+            rem_block = rem_block[split_index+1:]
+        else:
+            groups.append(rem_block)
+            rem_block = []
+    return groups
+
+def group_sections(sections, blocksize=BLOCKSIZE):
+    """
+    Groups a list of sections into a new list, where each group contains
+    no more than `blocksize` characters. If a group is larger than `blocksize`, it will be
+    split into additional groups using the newline character ('\\n') as the delimiter.
+    """
+    # Initialize an empty list to store the groups
+    groups = []
+
+    # Initialize an empty string to store the current group
+    curr_group = ""
+
+    # Loop over each string in the input list
+    for s in sections:
+        # If adding the current string to the current group would exceed `blocksize`,
+        # check if the current group is empty. If it is, add the current string as a
+        # separate group and continue with the next string. Otherwise, split the current
+        # group into additional groups using newline as the delimiter and continue processing
+        # the remaining part of the current string.
+        if len(curr_group) + len(s) > blocksize:
+            if len(curr_group) > 0:
+                groups.append(curr_group)
+            curr_group = ""
+            if (len(s) > blocksize):
+                groups.extend(split_block(s))
+            else:
+                curr_group = s
+        else:
+            # Otherwise, add the current string to the current group with a space
+            # separator.
+            curr_group += "\n" + s
+
+    # Add any remaining characters in the last group to the list of groups.
+    if curr_group:
+        groups.append(curr_group)
+
+    return groups
+
+
+def split_by_heading(text, max_level=3):
+    """
+    Generator that returns a list of chapters from text.
+    Each chapter's text includes the heading line.
+    """
+    curr_parent_headings = [None] * MAX_HEADING_LEVEL
+    curr_heading_line = None
+    curr_lines = []
+    within_fence = False
+    for next_line in text:
+        next_line = Line(next_line)
+
+        if next_line.is_fence():
+            within_fence = not within_fence
+
+        is_chapter_finished = (
+            not within_fence and next_line.is_heading() and next_line.heading_level <= max_level
+        )
+        if is_chapter_finished:
+            if len(curr_lines) > 0:
+                parents = __get_parents(curr_parent_headings, curr_heading_line)
+                yield Chapter(parents, curr_heading_line, curr_lines)
+
+                if curr_heading_line is not None:
+                    curr_level = curr_heading_line.heading_level
+                    curr_parent_headings[curr_level - 1] = curr_heading_line.heading_title
+                    for level in range(curr_level, MAX_HEADING_LEVEL):
+                        curr_parent_headings[level] = None
+
+            curr_heading_line = next_line
+            curr_lines = []
+
+        curr_lines.append(next_line.full_line)
+    parents = __get_parents(curr_parent_headings, curr_heading_line)
+    yield Chapter(parents, curr_heading_line, curr_lines)
+
+
+def __get_parents(parent_headings, heading_line):
+    if heading_line is None:
+        return []
+    max_level = heading_line.heading_level
+    trunc = list(parent_headings)[: (max_level - 1)]
+    return [h for h in trunc if h is not None]
+
+
+class Line:
+    """
+    Detect code blocks and ATX headings.
+
+    Headings are detected according to commonmark, e.g.:
+    - only 6 valid levels
+    - up to three spaces before the first # is ok
+    - empty heading is valid
+    - closing hashes are stripped
+    - whitespace around title are stripped
+    """
+
+    def __init__(self, line):
+        self.full_line = line
+        self._detect_heading(line)
+
+    def _detect_heading(self, line):
+        self.heading_level = 0
+        self.heading_title = None
+        result = re.search("^[ ]{0,3}(#+)(.*)", line)
+        if result is not None and (len(result[1]) <= MAX_HEADING_LEVEL):
+            title = result[2]
+            if len(title) > 0 and not (title.startswith(" ") or title.startswith("\t")):
+                # if there is a title it must start with space or tab
+                return
+            self.heading_level = len(result[1])
+
+            # strip whitespace and closing hashes
+            title = title.strip().rstrip("#").rstrip()
+            self.heading_title = title
+
+    def is_fence(self):
+        for fence in FENCES:
+            if self.full_line.startswith(fence):
+                return True
+        return False
+
+    def is_heading(self):
+        return self.heading_level > 0
+
 
 # This function chunks a text into smaller pieces based on a maximum token count and a delimiter.
 def chunk_on_delimiter(input_string: str,
                        max_chunksize: int, delimiter: str) -> List[str]:
     chunks = input_string.split(delimiter)
     combined_chunks, _, dropped_chunk_count = combine_chunks_with_no_minimum(
-        chunks, max_chunksize, chunk_delimiter=delimiter, add_ellipsis_for_overflow=True
+        chunks, max_chunksize, chunk_delimiter=delimiter, add_ellipsis_for_overflow=False
     )
     if dropped_chunk_count > 0:
-        print(f"warning: {dropped_chunk_count} chunks were dropped due to overflow")
+        print(f"warning: {dropped_chunk_count} chunk(s) overflow")
     combined_chunks = [f"{chunk}{delimiter}" for chunk in combined_chunks]
+    if len(combined_chunks[-1]) < max_chunksize / 2:
+        combined_chunks[-2] += delimiter + combined_chunks[-1]
+        combined_chunks.pop()
     return combined_chunks
 
 
@@ -69,9 +218,9 @@ def combine_chunks_with_no_minimum(
 
 def summarize(text: str,
               detail: float = 0,
-              model: str = model,
+              model: str = MODEL,
               additional_instructions: Optional[str] = None,
-              minimum_chunk_size: Optional[int] = num_ctx / 2,
+              minimum_chunk_size: Optional[int] = NUM_CTX / 2,
               chunk_delimiter: str = ".",
               summarize_recursively=False,
               verbose=False):
@@ -102,14 +251,17 @@ def summarize(text: str,
     assert 0 <= detail <= 1
 
     # interpolate the number of chunks based to get specified level of detail
-    max_chunks = len(chunk_on_delimiter(text, minimum_chunk_size, chunk_delimiter))
-    min_chunks = 1
-    num_chunks = int(min_chunks + detail * (max_chunks - min_chunks))
+    # max_chunks = len(chunk_on_delimiter(text, minimum_chunk_size, chunk_delimiter))
+    # min_chunks = 1
+    # num_chunks = int(min_chunks + detail * (max_chunks - min_chunks))
 
     # adjust chunk_size based on interpolated number of chunks
-    document_length = len(text)
-    chunk_size = max(minimum_chunk_size, document_length // num_chunks)
-    text_chunks = chunk_on_delimiter(text, chunk_size, chunk_delimiter)
+    # document_length = len(text)
+    # chunk_size = max(minimum_chunk_size, document_length // num_chunks)
+    # text_chunks = chunk_on_delimiter(text, chunk_size, chunk_delimiter)
+
+    sections = ["\n".join(s.text) for s in split_by_heading(text.split("\n"))]
+    text_chunks = group_sections(sections)
     if verbose:
         print(f"Splitting the text into {len(text_chunks)} chunks to be summarized.")
         print(f"Chunk lengths are {[len(x) for x in text_chunks]}")
@@ -149,8 +301,8 @@ Step 4. Don't include preambles, postambles or explanations.
             model=model,
             messages=messages,
             options={
-                "temperature": temperature,
-                "num_ctx": num_ctx
+                "temperature": TEMPERATURE,
+                "num_ctx": NUM_CTX
             },
         )
         accumulated_summaries.append(response['message']['content'])
@@ -201,6 +353,12 @@ def main():
 
     summary = summarize(markdown, detail=detail, verbose=True)
     output_summary(filename, summary)
+    # sections = ["\n".join(s.text) for s in split_by_heading(markdown.split("\n"))]
+    # for i,s in enumerate(sections):
+    #     print(f"Section {i} length {len(s)}")
+    # blocks = group_sections(sections)
+    # for i,s in enumerate(blocks):
+    #     print(f"Block {i} length {len(s)}")
 
 if __name__ == "__main__":
     main()
