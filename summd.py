@@ -90,26 +90,26 @@ def group_sections(sections, blocksize=BLOCKSIZE):
         # separate group and continue with the next string. Otherwise, split the current
         # group into additional groups using newline as the delimiter and continue processing
         # the remaining part of the current string.
-        if len(curr_group) + len(s) > blocksize:
-            if len(curr_group) > 0:
-                if len(s) < MIN_BLOCKSIZE:
-                    groups.append(curr_group + s)
-                else:
-                    groups.append(curr_group)
-            curr_group = ""
-            if (len(s) > blocksize):
-                groups.extend(split_block(s))
-            else:
-                curr_group = s
+        if len(curr_group + s) > blocksize:
+            if len(curr_group) > MIN_BLOCKSIZE:
+                groups.append(curr_group)
+                curr_group = ""
+            curr_group += s
+            if (len(curr_group) > blocksize):
+                groups.extend(split_block(curr_group))
+                curr_group = groups.pop()
         else:
             # Otherwise, add the current string to the current group with a space
             # separator.
-            curr_group += "\n" + s
+            curr_group += s
 
     # Add any remaining characters in the last group to the list of groups.
     if curr_group:
         if len(curr_group) < MIN_BLOCKSIZE:
-            groups[-1] += "\n" + curr_group
+            if len(groups) > 0:
+                groups[-1] += curr_group
+            else:
+                groups = [curr_group]
         else:
             groups.append(curr_group)
 
@@ -224,7 +224,7 @@ def summarize(text: str,
     adding more context to the summarization process. The function returns a compiled summary of all chunks.
     """
 
-    sections = ["\n".join(s.text) for s in split_by_heading(text.split("\n"))]
+    sections = ["\n".join(s.text) + "\n" for s in split_by_heading(text.split("\n"))]
     text_chunks = group_sections(sections)
 
     if verbose:
@@ -294,7 +294,7 @@ def output_summary(filename: str, summary: str):
     print(f'Converted to Markdown summary [{summary_file}]\n')
     
 def output_md(filename, markdown):
-    if (len(markdown) > BLOCKSIZE):
+    if (len(markdown) > BLOCKSIZE + MIN_BLOCKSIZE):
         summary = summarize(markdown, verbose=True)
     else:
         response = ollama.chat(
@@ -337,6 +337,12 @@ def process_path(path):
     else:
         print(f"Skipping unknown file [{path}]")
         return
+    
+    base = os.path.splitext(path)[0]
+    output = output_file(f"{base}.md", "_output/")
+    if os.path.isfile(output):
+        print(f"Skipping existing summary file [{output}]")
+        return       
 
     with open(path, 'r') as file:
         output_md(path, file.read())
