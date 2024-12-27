@@ -72,5 +72,6 @@ pip install newspaper3k
 # pip install ollama
 pip install pptx2md
 pip install pytubefix
+pip install markitdown
 # pip install lxml_html_clean
 ```
