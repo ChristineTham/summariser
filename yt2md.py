@@ -35,7 +35,7 @@ def download_transcript(video_url):
         # video_id = extract_youtube_id(video_url)
         # transcripts = YouTubeTranscriptApi.list_transcripts(video_id)
         # print(transcripts)
-        transcript = YouTubeTranscriptApi.get_transcript(video_id, preserve_formatting=True)
+        transcript = YouTubeTranscriptApi.get_transcript(video_id, preserve_formatting=True, languages=['en', 'en-GB'])
         
         filename = generate_slug(video["title"])
         print(f"Saving {filename}.md")
