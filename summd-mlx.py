@@ -22,7 +22,8 @@ from sumy.utils import get_stop_words
 import yake
 from mlx_lm import load, generate
 
-repo = "mlx-community/Llama-3.3-70B-Instruct-4bit"
+repo = "mlx-community/gemma-2-27b-it-bf16"
+# repo = "mlx-community/Llama-3.3-70B-Instruct-4bit"
 model, tokenizer = load(repo)
 
 MAX_TOKENS = 65536
@@ -36,6 +37,8 @@ BLOCKSIZE=int(NUM_CTX * 1.5)
 MIN_BLOCKSIZE=int(NUM_CTX / 2)
 FENCES = ["```", "~~~"]
 MAX_HEADING_LEVEL = 6
+INPUT_DIR = "_markdown/"
+OUTPUT_DIR = "_llama/"
 
 Chapter = namedtuple("Chapter", "parent_headings, heading, text")
 
@@ -215,7 +218,6 @@ def summarize(text: str,
 
     Parameters:
     - text (str): The text to be summarized.
-    - model (str, optional): The model to use for generating summaries. Defaults to MODEL.
     - additional_instructions (Optional[str], optional): Additional instructions to provide to the model for customizing summaries.
     - summarize_recursively (bool, optional): If True, summaries are generated recursively, using previous summaries for context.
     - verbose (bool, optional): If True, prints detailed information about the chunking process.
@@ -282,13 +284,11 @@ def summarize(text: str,
     return final_summary
 
 def output_file(s, prefix):
-    input_prefix = "_markdown/"
-
     # Strip _input/ prefix if it exists
-    if s.startswith(input_prefix):
-        s = s[len(input_prefix):]
+    if s.startswith(INPUT_DIR:
+        s = s[len(INPUT_DIR):]
 
-    # Add _output/ prefix
+    # Add prefix
     s = prefix + s
 
     return s
@@ -296,7 +296,7 @@ def output_file(s, prefix):
 def output_summary(filename: str, summary: str):
     base = os.path.splitext(filename)[0]
     
-    summary_file = output_file(f"{base}.md", "_output/")
+    summary_file = output_file(f"{base}.md", OUTPUT_DIR)
     original = output_file(filename, "")
     os.makedirs(os.path.dirname(summary_file), exist_ok=True)
     with open(summary_file, 'w') as file:
@@ -360,7 +360,7 @@ def process_path(path):
         return
     
     base = os.path.splitext(path)[0]
-    output = output_file(f"{base}.md", "_output/")
+    output = output_file(f"{base}.md", OUTPUT_DIR)
     if os.path.isfile(output):
         print(f"Skipping existing summary file [{output}]")
         return       
