@@ -61,15 +61,7 @@ Install LLM model of your choice (if you have at least 64GB memory on a Mac M sy
 
 ```sh
 ollama pull gemma2:27b-instruct-fp16
-conda create -n summarise python bs4 lxml transformers ipykernel ipywidgets pypandoc markdownify readability-lxml matplotlib scipy sumy yake ollama-python lxml-html-clean yt-dlp youtube-transcript-api mlx mlx-lm
+conda create -n summarise python=3.12 
 conda activate summarise
-conda install pytorch torchvision -c pytorch
-pip install marker_pdf
-pip install pymupdf4llm
-pip install newspaper3k
-# pip install ollama
-pip install pptx2md
-pip install pytubefix
-pip install markitdown
-# pip install lxml_html_clean
+pip install marker_pdf pymupdf4llm newspaper3k pptx2md pytubefix markitdown aksharamukha
 ```
