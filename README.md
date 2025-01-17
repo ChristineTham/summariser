@@ -22,7 +22,7 @@ Also understands URLs and Youtube videos.
 ## Basic usage
 
 ```sh
-conda activate summarise
+conda activate main
 python tomd.py # Converts all files recursively in the "_input" folder
 python tomd.py [file|dir|url|youtube ...]
 python summd.py # by default converts all files recursively in the "_markdown" folder
@@ -61,7 +61,8 @@ Install LLM model of your choice (if you have at least 64GB memory on a Mac M sy
 
 ```sh
 ollama pull gemma2:27b-instruct-fp16
-conda create -n summarise python=3.12 
-conda activate summarise
+conda create -n main python=3.12 
+conda activate main
+conda install -c pytorch pytorch torchvision torchaudio bs4 lxml transformers ipykernel ipywidgets pypandoc markdownify readability-lxml matplotlib scipy sumy yake ollama-python lxml-html-clean yt-dlp youtube-transcript-api mlx mlx-lm python-frontmatter
 pip install marker_pdf pymupdf4llm newspaper3k pptx2md pytubefix markitdown aksharamukha
 ```

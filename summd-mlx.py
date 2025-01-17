@@ -22,8 +22,8 @@ from sumy.utils import get_stop_words
 import yake
 from mlx_lm import load, generate
 
-repo = "mlx-community/gemma-2-27b-it-bf16"
-# repo = "mlx-community/Llama-3.3-70B-Instruct-4bit"
+# repo = "mlx-community/gemma-2-27b-it-bf16"
+repo = "mlx-community/Llama-3.3-70B-Instruct-8bit"
 model, tokenizer = load(repo)
 
 MAX_TOKENS = 65536
