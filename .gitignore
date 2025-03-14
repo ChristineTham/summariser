@@ -165,3 +165,5 @@ _input/**
 _output/**
 _markdown/**
 _processsed/**
+
+.DS_Store
