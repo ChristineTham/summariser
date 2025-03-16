@@ -1,0 +1,48 @@
+name: main
+channels:
+  #  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12
+  - pytorch
+  - torchvision
+  - torchaudio
+  - bs4
+  - lxml
+  - transformers
+  - ipykernel
+  - ipywidgets
+  - pypandoc
+  - markdownify
+  - readability-lxml
+  - matplotlib
+  - scipy
+  - sumy
+  - yake
+  - ollama-python
+  - lxml-html-clean
+  - yt-dlp
+  - youtube-transcript-api
+  - mlx
+  - mlx-lm
+  - mlx-vlm
+  - python-frontmatter
+  - fastfetch
+  - imagemagick
+  - ffmpeg
+  - go
+  - hugo
+  - rust
+  - ruby
+  - compilers
+  - pip
+  - pip:
+      - marker_pdf
+      - pymupdf4llm
+      - newspaper3k
+      - pptx2md
+      - pytubefix
+      - markitdown
+      - aksharamukha
+      - mistralai
