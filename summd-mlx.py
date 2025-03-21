@@ -17,19 +17,19 @@ from tqdm import tqdm
 from sumy.nlp.tokenizers import Tokenizer
 from sumy.nlp.stemmers import Stemmer
 from sumy.parsers.plaintext import PlaintextParser
-from sumy.summarizers.lsa import LsaSummarizer     
+from sumy.summarizers.lsa import LsaSummarizer
 from sumy.utils import get_stop_words
 import yake
 from mlx_lm import load, generate
 
-# repo = "mlx-community/gemma-2-27b-it-bf16"
-repo = "mlx-community/Llama-3.3-70B-Instruct-8bit"
-model, tokenizer = load(repo)
+MODEL = "mlx-community/c4ai-command-a-03-2025-4bit"
+NUM_CTX= 8192
+OUTPUT_DIR = "_output/"
+model = None
+tokenizer = None
 
 MAX_TOKENS = 65536
 MAX_KV_SIZE = 4096
-# MODEL="gemma2:27b-instruct-fp16"
-NUM_CTX=8192
 TEMPERATURE=0.3
 LANGUAGE = "english"
 SENTENCES_COUNT = 10
@@ -38,7 +38,6 @@ MIN_BLOCKSIZE=int(NUM_CTX / 2)
 FENCES = ["```", "~~~"]
 MAX_HEADING_LEVEL = 6
 INPUT_DIR = "_markdown/"
-OUTPUT_DIR = "_llama/"
 
 Chapter = namedtuple("Chapter", "parent_headings, heading, text")
 
@@ -47,10 +46,10 @@ You are an efficient text summarizer.
 
 ## Instructions
 
-Step 1. Read the entire text.
+Step 1. Read the entire text (comes after <Summarise>).
 Step 2. Extract headings which begin with #.
 Step 3. Include each heading in the output.
-Step 4. For each heading, create a summary in bullet points.
+Step 4. For each heading, consider to the key points in the text and create a summary in bullet points.
 Step 5. Don't include preambles, postambles or explanations.
 """
 
@@ -213,11 +212,11 @@ def summarize(text: str,
               summarize_recursively=False,
               verbose=False):
     """
-    Summarizes a given text by splitting it into chunks, each of which is summarized individually. 
+    Summarizes a given text by splitting it into chunks, each of which is summarized individually.
     The process can optionally be made recursive.
 
     Parameters:
-    - text (str): The text to be summarized.
+    - text (str): The text to be summarized (comes after <Summarise>).
     - additional_instructions (Optional[str], optional): Additional instructions to provide to the model for customizing summaries.
     - summarize_recursively (bool, optional): If True, summaries are generated recursively, using previous summaries for context.
     - verbose (bool, optional): If True, prints detailed information about the chunking process.
@@ -225,8 +224,8 @@ def summarize(text: str,
     Returns:
     - str: The final compiled summary of the text.
 
-    The function first determines the number of chunks by interpolating between a minimum and a maximum chunk count based on the `detail` parameter. 
-    It then splits the text into chunks and summarizes each chunk. If `summarize_recursively` is True, each summary is based on the previous summaries, 
+    The function first determines the number of chunks by interpolating between a minimum and a maximum chunk count based on the `detail` parameter.
+    It then splits the text into chunks and summarizes each chunk. If `summarize_recursively` is True, each summary is based on the previous summaries,
     adding more context to the summarization process. The function returns a compiled summary of all chunks.
     """
 
@@ -251,7 +250,7 @@ def summarize(text: str,
             user_message_content = f"## Previous summaries:\n\n{accumulated_summaries_string}\n\n## Text to summarize next:\n\n{chunk}"
         else:
             # Directly passing the chunk for summarization without recursive context
-            user_message_content = "## Text to summarize\n" + chunk
+            user_message_content = "<Summarise>\n" + chunk
 
         # Constructing messages based on whether recursive summarization is applied
         messages = [
@@ -263,7 +262,7 @@ def summarize(text: str,
             messages, add_generation_prompt=True
         )
 
-        summary = generate(model, tokenizer, prompt=prompt, temp=TEMPERATURE, max_tokens=MAX_TOKENS, max_kv_size=MAX_KV_SIZE, verbose=False)
+        summary = generate(model, tokenizer, prompt=prompt, max_tokens=MAX_TOKENS, verbose=False)
         accumulated_summaries.append(summary)
 
         # print(messages)
@@ -285,38 +284,38 @@ def summarize(text: str,
 
 def output_file(s, prefix):
     # Strip _input/ prefix if it exists
-    if s.startswith(INPUT_DIR:
+    if s.startswith(INPUT_DIR):
         s = s[len(INPUT_DIR):]
 
     # Add prefix
-    s = prefix + s
+    s = os.path.join(prefix, s)
 
     return s
 
 def output_summary(filename: str, summary: str):
     base = os.path.splitext(filename)[0]
-    
+
     summary_file = output_file(f"{base}.md", OUTPUT_DIR)
     original = output_file(filename, "")
     os.makedirs(os.path.dirname(summary_file), exist_ok=True)
     with open(summary_file, 'w') as file:
         file.write(summary)
         file.write(f"\n\n[Original]({original})\n")
-    print(f'Converted to Markdown summary [{summary_file}]\n')
-    
+    print(f'Output: [{summary_file}]\n')
+
 def output_md(filename, markdown):
     if (len(markdown) > BLOCKSIZE + MIN_BLOCKSIZE):
         summary = summarize(markdown, verbose=True)
     else:
         messages=[
             {'role': 'system', 'content': system_prompt},
-            {'role': 'user', 'content': "## text\n" + markdown}
+            {'role': 'user', 'content': "<Summarise>\n" + markdown}
         ]
         prompt = tokenizer.apply_chat_template(
             messages, add_generation_prompt=True
         )
 
-        summary = generate(model, tokenizer, prompt=prompt, temp=TEMPERATURE, max_tokens=MAX_TOKENS, max_kv_size=MAX_KV_SIZE, verbose=False)
+        summary = generate(model, tokenizer, prompt=prompt, max_tokens=MAX_TOKENS, verbose=False)
 
         # response = ollama.chat(
         #     model=MODEL,
@@ -338,19 +337,19 @@ def output_md(filename, markdown):
     keywords = kw_extractor.extract_keywords(markdown)
 
     for kw in keywords:
-        summary += f"* [[{kw[0]}]]\n" 
-    
-    # Summarize using sumy LSA       
-    # summary += "\n## Abstract\n\n"  
+        summary += f"* [[{kw[0]}]]\n"
+
+    # Summarize using sumy LSA
+    # summary += "\n## Abstract\n\n"
     # parser = PlaintextParser.from_string(markdown, Tokenizer(LANGUAGE))
     # stemmer = Stemmer(LANGUAGE)
-    # summarizer = LsaSummarizer(stemmer)     
-    # summarizer.stop_words = get_stop_words(LANGUAGE)                  
+    # summarizer = LsaSummarizer(stemmer)
+    # summarizer.stop_words = get_stop_words(LANGUAGE)
     # for sentence in summarizer(parser.document, SENTENCES_COUNT):
     #     summary += f"* {sentence}\n"
 
     output_summary(filename, summary)
-    
+
 def process_path(path):
     _, file_extension = os.path.splitext(path)
     if (file_extension == ".md" or file_extension == ".txt"):
@@ -358,12 +357,12 @@ def process_path(path):
     else:
         print(f"Skipping unknown file [{path}]")
         return
-    
+
     base = os.path.splitext(path)[0]
     output = output_file(f"{base}.md", OUTPUT_DIR)
     if os.path.isfile(output):
-        print(f"Skipping existing summary file [{output}]")
-        return       
+        print(f"Skipping existing  [{output}]")
+        return
 
     with open(path, 'r') as file:
         output_md(path, file.read())
@@ -372,18 +371,35 @@ def process_dir(folder):
     for foldername, _, filenames in os.walk(folder):
         for filename in filenames:
             path = os.path.join(foldername, filename)
-            process_path(path)            
-            
+            process_path(path)
+
 def main():
-    if len(sys.argv) < 2:
+    global MODEL, NUM_CTX, OUTPUT_DIR, BLOCKSIZE, MIN_BLOCKSIZE, model, tokenizer
+
+    parser = argparse.ArgumentParser(description="Summarise markdown files")
+    parser.add_argument("path", nargs="*", help="Path to a file or directory (default: _markdown)")
+    parser.add_argument("-m", "--model", type=str, default=MODEL,
+                        help=f"MLX Model (default: {MODEL})")
+    parser.add_argument("-c", "--context", type=int, default=NUM_CTX,
+                        help=f"Size of chunks (default: {NUM_CTX})")
+    parser.add_argument("-o", "--output", type=str, default=OUTPUT_DIR,
+                        help=f"Output directory (default: {OUTPUT_DIR})")
+
+    args = parser.parse_args()
+    MODEL = args.model
+    NUM_CTX = args.context
+    BLOCKSIZE=int(NUM_CTX * 1.5)
+    MIN_BLOCKSIZE=int(NUM_CTX / 2)
+    OUTPUT_DIR = args.output
+
+    print(f"Model: {MODEL}\nChunk size: {NUM_CTX}\nOutput dir: [{OUTPUT_DIR}]")
+    model, tokenizer = load(MODEL)
+
+    if not args.path:
         print("Processing _markdown directory by default")
         path = "_markdown"
         process_dir(path)
     else:
-        parser = argparse.ArgumentParser(description="summarise.py [file|dir] ...")
-        parser.add_argument("path", nargs="+", help="Path to a file or directory")
-        args = parser.parse_args()
-
         for path in args.path:
             if os.path.isfile(path):
                 process_path(path)
