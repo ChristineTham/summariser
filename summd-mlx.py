@@ -22,7 +22,7 @@ from sumy.utils import get_stop_words
 import yake
 from mlx_lm import load, generate
 
-MODEL = "mlx-community/c4ai-command-a-03-2025-4bit"
+MODEL = "mlx-community/Mistral-Small-3.1-Text-24B-Instruct-2503-bf16"
 NUM_CTX= 8192
 OUTPUT_DIR = "_output/"
 model = None
