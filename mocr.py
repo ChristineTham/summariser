@@ -1,6 +1,6 @@
 import os
 import json
-import sys
+import argparse
 from mistralai import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
