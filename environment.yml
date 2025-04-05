@@ -24,9 +24,6 @@ dependencies:
   - lxml-html-clean
   - yt-dlp
   - youtube-transcript-api
-  - mlx
-  - mlx-lm
-  - mlx-vlm
   - python-frontmatter
   - fastfetch
   - imagemagick
@@ -37,12 +34,20 @@ dependencies:
   - ruby
   - compilers
   - pip
+  - rope
+  - notebook
+  - jupyterlab
   - pip:
-      - marker_pdf
+      - "marker-pdf[full]"
       - pymupdf4llm
       - newspaper3k
       - pptx2md
       - pytubefix
-      - markitdown
+      - "markitdown[all]"
       - aksharamukha
       - mistralai
+      - google-genai
+      - google-core-api
+      - mlx
+      - mlx-lm
+      - mlx-vlm
