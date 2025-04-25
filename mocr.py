@@ -52,8 +52,9 @@ def pdf2md(file):
     # write images from ocr_response
     for page in ocr_response.pages:
         for image in page.images:
-            image_data = base64.b64decode(image.base64)
+            image_data = base64.b64decode(image.image_base64)
             image_name = image.id
+            print(f"Writing to [{image_name}]")
             with open(image_name, "wb") as f:
                 f.write(image_data)
 
@@ -62,4 +63,5 @@ if __name__ == "__main__":
     parser.add_argument("file", nargs="+", help="URL or PDF file")
     args = parser.parse_args()
     for file in args.file:
+        print(f"Processing: {file}")
         pdf2md(file)
