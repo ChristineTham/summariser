@@ -1,6 +1,5 @@
 name: main
 channels:
-  #  - pytorch
   - conda-forge
   - defaults
 dependencies:
@@ -14,40 +13,40 @@ dependencies:
   - ipykernel
   - ipywidgets
   - pypandoc
-  - markdownify
-  - readability-lxml
+  # - markdownify
+  # - readability-lxml
   - matplotlib
   - scipy
-  - sumy
+  # - sumy
   - yake
   - ollama-python
   - lxml-html-clean
-  - yt-dlp
-  - youtube-transcript-api
+  # - yt-dlp
+  # - youtube-transcript-api
   - python-frontmatter
-  - fastfetch
+  # - fastfetch
   - imagemagick
   - ffmpeg
-  - go
-  - hugo
-  - rust
-  - ruby
-  - compilers
+  # - go
+  # - hugo
+  # - rust
+  # - ruby
+  # - compilers
   - pip
   - rope
   - notebook
   - jupyterlab
   - pip:
       - "marker-pdf[full]"
-      - pymupdf4llm
-      - newspaper3k
-      - pptx2md
+      # - pymupdf4llm
+      # - newspaper3k
+      # - pptx2md
       - pytubefix
       - "markitdown[all]"
       - aksharamukha
       - mistralai
       - google-genai
-      - google-core-api
+      - google-api-core
       - mlx
       - mlx-lm
       - mlx-vlm

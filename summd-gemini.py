@@ -18,12 +18,12 @@ import yake
 from google import genai
 from google.genai import types
 
-MODEL = "gemini-2.0-flash-001"
+MODEL = "gemini-2.5-pro-preview-03-25"
 NUM_CTX= 500000
-OUTPUT_DIR = "_gemini/"
+OUTPUT_DIR = "_summary/"
 client = genai.Client()
 
-MAX_TOKENS = 65536
+MAX_TOKENS = 8192
 TEMPERATURE=0.3
 LANGUAGE = "english"
 SENTENCES_COUNT = 10
@@ -43,7 +43,7 @@ You are an efficient text summarizer.
 Step 1. Read the entire text (comes after <Summarise>).
 Step 2. Extract headings which begin with #.
 Step 3. Include each heading in the output.
-Step 4. For each heading, consider to the key points in the text and create a summary in bullet points.
+Step 4. For each heading, consider the key points in the text and create a summary in bullet points.
 Step 5. Don't include preambles, postambles or explanations.
 """
 
@@ -286,6 +286,7 @@ def output_summary(filename: str, summary: str):
     print(f'Output: [{summary_file}]\n')
 
 def output_md(filename, markdown):
+    summary = ""
     if (len(markdown) > BLOCKSIZE + MIN_BLOCKSIZE):
         summary = summarize(markdown, verbose=True)
     else:
@@ -299,9 +300,10 @@ def output_md(filename, markdown):
             ),
         )
         summary = response.text
+        # print(f"Summary: {summary}")
 
     # Extract keywords using YAKE
-    summary += "\n## Keywords\n\n"
+    summary = summary + "\n## Keywords\n\n"
     kw_extractor = yake.KeywordExtractor()
     keywords = kw_extractor.extract_keywords(markdown)
 
