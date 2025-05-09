@@ -29,6 +29,11 @@ python summd.py # by default converts all files recursively in the "_markdown" f
 python tomd.py [file|dir ...] # Converts only .txt and .md files
 ```
 
+Other versions of summmd:
+
+* `summd-gemini.py` - uses Gemini API
+* `summd-mlx.py` - uses MLX
+
 ## Converb web pages and Youtube videos to Markdown
 
 ```sh
@@ -40,13 +45,13 @@ python yt2md.py url   # convert YouTube video captions to markdown
 ## Convert PDF to Markdown using Marker PDF
 
 ```sh
-marker_single --batch_multiplier 20 input.pdf outdir_dir
+marker_single --use-llm --output_dir  input.pdf
 ```
 
-## Convert Powerpoint to Markdown using pptx2md
+## Convert Multiple file formats to Markdown
 
 ```sh
-pptx2md input.pptx # generates out.md and img/
+markitdown input.pptx > output.md
 ```
 
 ## Experiments
@@ -60,10 +65,13 @@ Install [Ollama](https://ollama.com/download), then install [conda-forge](https:
 Install LLM model of your choice (if you have at least 64GB memory on a Mac M system, I recommend "gemma2:27b-instruct-fp16")
 
 ```sh
-ollama pull gemma2:27b-instruct-fp16
-conda create -n main python=3.12
+conda env create -f environment.yml
 conda activate main
-conda install -c pytorch pytorch torchvision torchaudio
-conda install bs4 lxml transformers ipykernel ipywidgets pypandoc markdownify readability-lxml matplotlib scipy sumy yake ollama-python lxml-html-clean yt-dlp youtube-transcript-api mlx mlx-lm python-frontmatter fastfetch imagemagick ffmpeg go hugo rust ruby compilers
-pip install marker_pdf pymupdf4llm newspaper3k pptx2md pytubefix markitdown aksharamukha mistralai --upgrade
+# pip install --upgrade "marker-pdf[full]" pymupdf4llm newspaper3k pytubefix "markitdown[all]" aksharamukha mistralai google-genai google-core-api mlx mlx-lm mlx-vlm
+```
+
+To update the environment, run:
+
+```sh
+conda env update -f environment.yml
 ```

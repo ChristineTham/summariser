@@ -1,3 +1,14 @@
+# /// script
+# requires-python = ">=3.12"
+# dependencies = [
+#     "google-api-core",
+#     "google-genai",
+#     "tqdm",
+#     "typing",
+#     "yake",
+# ]
+# ///
+
 # summd.py
 #
 # Generic summariser for text/markdown files
