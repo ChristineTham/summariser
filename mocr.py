@@ -1,7 +1,17 @@
+# /// script
+# requires-python = ">=3.12"
+# dependencies = [
+#     "mistralai",
+# ]
+# ///
+
 import os
 import base64
 import argparse
 from mistralai import Mistral
+from base64 import encode
+# from PIL import Image
+# from io import BytesIO
 
 api_key = os.environ["MISTRAL_API_KEY"]
 client = Mistral(api_key=api_key)
@@ -52,7 +62,8 @@ def pdf2md(file):
     # write images from ocr_response
     for page in ocr_response.pages:
         for image in page.images:
-            image_data = base64.b64decode(image.image_base64)
+            # image_data = Image.open(BytesIO(generated_image.image.image_bytes))
+            image_data = base64.b64decode(image.image_base64.encode("utf-8"))
             image_name = image.id
             print(f"Writing to [{image_name}]")
             with open(image_name, "wb") as f:
