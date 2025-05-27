@@ -29,7 +29,8 @@ import yake
 from google import genai
 from google.genai import types
 
-MODEL = "gemini-2.5-pro-preview-03-25"
+# MODEL = "gemini-2.5-pro-preview-03-25"
+MODEL = "gemini-2.5-flash-preview-05-20"
 NUM_CTX= 500000
 OUTPUT_DIR = "_summary/"
 client = genai.Client()
