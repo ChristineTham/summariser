@@ -34,7 +34,7 @@ INPUT_DIR = "_markdown/"
 def output_summary(filename, markdown):
         response = client.models.generate_content(
             model=MODEL,
-            contents=["Generate a set of keywords for the following text. Put keywords in a Markdown list with each keyword enclosed in [[ and ]]:", markdown],
+            contents=["Generate a set of keywords for the following text. Do not add preamble, postamble or explanations. Put keywords in a Markdown list with each keyword enclosed in [[ and ]]:", markdown],
             config=types.GenerateContentConfig(
                 max_output_tokens=MAX_TOKENS,
                 temperature=TEMPERATURE,
