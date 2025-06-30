@@ -23,8 +23,8 @@ import argparse
 from google import genai
 from google.genai import types
 
-# MODEL = "gemini-2.5-pro-preview-03-25"
-MODEL = "gemini-2.5-flash-preview-05-20"
+MODEL = "gemini-2.5-pro"
+# MODEL = "gemini-2.5-flash-preview-05-20"
 client = genai.Client()
 
 MAX_TOKENS = 8192
@@ -34,7 +34,7 @@ INPUT_DIR = "_markdown/"
 def output_summary(filename, markdown):
         response = client.models.generate_content(
             model=MODEL,
-            contents=["Generate a set of keywords for the following text. Do not add preamble, postamble or explanations. Put keywords in a Markdown list with each keyword enclosed in [[ and ]]:", markdown],
+            contents=["Generate a set of keywords for the following text. Do not add preamble, postamble or explanations. Put keywords in a list with each keyword preceeded by '  -':", markdown],
             config=types.GenerateContentConfig(
                 max_output_tokens=MAX_TOKENS,
                 temperature=TEMPERATURE,

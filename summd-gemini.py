@@ -1,8 +1,8 @@
 # /// script
 # requires-python = ">=3.12"
 # dependencies = [
-#     "google-api-core",
 #     "google-genai",
+#     "tenacity",
 #     "tqdm",
 #     "mdsplit",
 # ]
@@ -17,6 +17,7 @@
 # as Markdown with headings retained where appropriate and bullet points in content.
 # Accepted file extensions: .md, .txt
 
+import asyncio
 import sys
 import os
 import re
@@ -27,7 +28,9 @@ from tqdm import tqdm
 from google import genai
 from google.genai import types
 
-MODEL = "gemini-2.5-pro-preview-05-06"
+from tenacity import retry, wait_random_exponential
+
+MODEL = "gemini-2.5-pro"
 # MODEL = "gemini-2.5-flash-preview-05-20"
 LEVEL=0
 INPUT_DIR = "_markdown/"
@@ -49,6 +52,14 @@ Step 4. For each heading, consider the key points in the text and create a summa
 Step 5. Don't include preambles, postambles or explanations.
 """
 
+@retry(wait=wait_random_exponential(multiplier=1, max=60))
+async def async_generate_content(model, contents, config):
+   return await client.aio.models.generate_content(model=model, contents=contents, config=config)
+   return response.text
+
+def generate_content(model, contents, config):
+   return asyncio.run(async_generate_content(model, contents, config))
+
 def summarise_by_heading(markdown: str, verbose: bool):
     chunks = ["\n".join(s.text) + "\n" for s in split_by_heading(markdown.split("\n"), LEVEL)]
 
@@ -65,7 +76,7 @@ def summarise_by_heading(markdown: str, verbose: bool):
         summary = None
 
         while not summary:
-            response = client.models.generate_content(
+            response = generate_content(
                 model=MODEL,
                 contents=[user_message_content],
                 config=types.GenerateContentConfig(
@@ -108,7 +119,7 @@ def summarise(markdown: str):
     summary = None
 
     while not summary:
-        response = client.models.generate_content(
+        response = generate_content(
             model=MODEL,
             contents=["<Summarise>\n", markdown],
             config=types.GenerateContentConfig(
@@ -134,7 +145,7 @@ def output_md(filename, markdown):
     keywords = None
 
     while not keywords:
-        response = client.models.generate_content(
+        response = generate_content(
             model=MODEL,
             contents=["Generate a set of keywords for the following text. Do not add preamble, postamble or explanations. Put keywords in a Markdown list with each keyword enclosed in [[ and ]]:", markdown],
             config=types.GenerateContentConfig(

@@ -23,8 +23,8 @@ import argparse
 from google import genai
 from google.genai import types
 
-# MODEL = "gemini-2.5-pro-preview-03-25"
-MODEL = "gemini-2.5-flash-preview-05-20"
+MODEL = "gemini-2.5-pro"
+# MODEL = "gemini-2.5-flash-preview-05-20"
 client = genai.Client()
 
 MAX_TOKENS = 8192
